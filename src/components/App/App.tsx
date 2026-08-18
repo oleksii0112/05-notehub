@@ -7,9 +7,11 @@ import NoteForm from "../NoteForm/NoteForm";
 import Loader from "../Loader/Loader";
 import ErrorMessage from "../ErrorMessage/ErrorMessage";
 
+
+import toast, { Toaster } from "react-hot-toast";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { fetchNotes, createNote, deleteNote } from "../../services/noteService";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDebouncedCallback } from "use-debounce";
 
@@ -47,8 +49,11 @@ export default function App() {
   const deleteNotes = useMutation({
     mutationFn: deleteNote,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['getNotes']})
-    }
+      queryClient.invalidateQueries({ queryKey: ['getNotes'] })
+      toast.success('Нотатку видалено');
+    }, onError: () => {
+    toast.error(`Нотатку не знайдено`);
+  },
   })
 
   const addNotes = useMutation({
@@ -56,11 +61,19 @@ export default function App() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["getNotes"] });
       setIsModalOpen(false);
+      toast.success(`Нотатку додано`);
     }
   })
 
+  useEffect(() => {
+    if (search && !isLoading && data?.notes.length === 0) {
+      toast.error(`Нотатку не знайдено`);
+    }
+  }, [data, search, isLoading]);
+
   return (
     <div className={css.app}>
+      <Toaster position="top-right" />
       <header className={css.toolbar}>
         <SearchBox query={inputValue} onChange={handleSearchChange} />
         {totalPages > 1 && (
